@@ -1,0 +1,44 @@
+services:
+
+  frontend:
+    build: ./frontend
+    container_name: devsecops-frontend
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    container_name: devsecops-backend
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_NAME: appdb
+      DB_USER: appuser
+      DB_PASSWORD: devpassword
+    depends_on: 
+      - database
+
+  database:
+    image: postgres:16-alpine
+    container_name: devsecops-database
+    restart: unless-stopped
+    environment:
+      POSTEGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTEGRES_PASSWORD: devpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  nginx:
+    build: ./nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres_data:
+

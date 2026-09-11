@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DevSecOps Production App</title>
+</head>
+<body>
+    <h1>DevSecOps Multi-Tier Application</h1>
+
+    <p>Frontend is running.</p>
+
+    <button onclick="checkBackend()">Check Backend</button>
+
+    <p id="result"></p>
+
+    <script>
+        async function checkBackend() {
+            const response = await fetch("/api/health");
+            const data = await response.json();
+
+            document.getElementById("result").innerText =
+                JSON.stringify(data);
+        }
+    </script>
+</body>
+</html>
