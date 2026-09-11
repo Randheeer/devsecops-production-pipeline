@@ -6,7 +6,16 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo 'Checking out source code'
+                echo 'Source code checked out by Jenkins'
+            }
+        }
+
+        stage('Gitleaks Secret Scan') {
+            steps {
+                sh '''
+                    echo "Running Gitleaks..."
+                    gitleaks dir . --no-banner --redact
+                '''
             }
         }
 
@@ -18,16 +27,16 @@ pipeline {
                 sh 'trivy --version'
             }
         }
-
     }
 
     post {
+
         success {
-            echo 'Pipeline completed successfully'
+            echo 'Security checks passed'
         }
 
         failure {
-            echo 'Pipeline failed'
+            echo 'Security pipeline failed'
         }
     }
 }
