@@ -23,7 +23,10 @@ pipeline {
     	    steps {
                 sh '''
                     echo "Running Semgrep SAST..."
-                    semgrep scan --config auto .
+
+		    semgrep scan \
+		      --config auto \
+		      --error
         	'''
     	    }
 	}
