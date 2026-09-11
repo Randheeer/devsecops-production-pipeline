@@ -31,6 +31,18 @@ pipeline {
     	    }
 	}
 
+	stage('SonarQube Analysis') {
+    	    steps {
+                withSonarQubeEnv('SonarQube') {
+                    sh '''
+                        echo "Running SonarQube analysis..."
+   
+                        sonar-scanner
+                    '''
+                }
+            }  
+        } 
+
         stage('Environment Check') {
             steps {
                 sh 'git --version'
