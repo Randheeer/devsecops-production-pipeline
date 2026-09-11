@@ -19,6 +19,15 @@ pipeline {
             }
         }
 
+	stage('Semgrep SAST') {
+    	    steps {
+                sh '''
+                    echo "Running Semgrep SAST..."
+                    semgrep scan --config auto .
+        	'''
+    	    }
+	}
+
         stage('Environment Check') {
             steps {
                 sh 'git --version'
