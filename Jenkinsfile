@@ -310,10 +310,10 @@ pipeline {
             	    echo "======================================"
             	    echo "Running OWASP ZAP DAST..."
             	    echo "======================================"
-
+			
             	    rm -f zap-report.html
 
-            	    docker run --rm \
+           	    docker run --rm \
               	      -t \
                       -v "$WORKSPACE:/zap/wrk/:rw" \
                       zaproxy/zap-stable \
@@ -332,9 +332,9 @@ pipeline {
                 always {
                     archiveArtifacts artifacts: 'zap-report.html',
               	                         allowEmptyArchive: true
-                }
-            }  
-        }
+              }
+          }  
+      }
 
     /*
      * ============================
