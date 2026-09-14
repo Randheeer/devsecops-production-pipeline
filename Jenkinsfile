@@ -304,37 +304,37 @@ pipeline {
         }
     }
 
-        stage('OWASP ZAP DAST') {
-    	    steps {
-        	sh '''
-            	    echo "======================================"
-            	    echo "Running OWASP ZAP DAST..."
-            	    echo "======================================"
+         stage('OWASP ZAP DAST') {
+    	     steps {
+        	 sh '''
+            	     echo "======================================"
+            	     echo "Running OWASP ZAP DAST..."
+            	     echo "======================================"
 			
-            	    rm -f zap-report.html
+            	     rm -f zap-report.html
 
-           	    docker run --rm \
-              	      -t \
-                      -v "$WORKSPACE:/zap/wrk/:rw" \
-                      zaproxy/zap-stable \
-                      zap-baseline.py \
-                      -t http://65.0.153.17:8081/ \
-                      -r zap-report.html \
-                      -I
+           	     docker run --rm \
+              	       -t \
+                       -v "$WORKSPACE:/zap/wrk/:rw" \
+                       zaproxy/zap-stable \
+                       zap-baseline.py \
+                       -t http://65.0.153.17:8081/ \
+                       -r zap-report.html \
+                       -I
 
-                    echo "ZAP scan completed"
+                     echo "ZAP scan completed"
 
-                    ls -lh zap-report.html
-                '''
-                }
+                     ls -lh zap-report.html
+                 '''
+                 }
 
-            post {
-                always {
-                    archiveArtifacts artifacts: 'zap-report.html',
-              	                         allowEmptyArchive: true
-              }
-          }  
-      }
+             post {
+                 always {
+                     archiveArtifacts artifacts: 'zap-report.html',
+              	                          allowEmptyArchive: true
+               }
+           }  
+       }
 
     /*
      * ============================
