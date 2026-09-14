@@ -41,6 +41,18 @@ pipeline {
                 }
             }
         } 
+	
+	stage('Docker Build') {
+    	    steps {
+        	sh '''
+            	    echo "Building backend Docker image..."
+
+            	    docker build \
+              	      -t devsecops-backend:${BUILD_NUMBER} \
+              	      ./backend
+        	'''
+            }
+	}	
 
         stage('Environment Check') {
             steps {
