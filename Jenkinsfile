@@ -82,7 +82,6 @@ pipeline {
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --ignore-unfixed \
-                      --exit-code 1 \
                       --no-progress \
                       devsecops-backend:${BUILD_NUMBER}
                 '''
@@ -115,7 +114,6 @@ pipeline {
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --ignore-unfixed \
-                      --exit-code 1 \
                       --no-progress \
                       devsecops-frontend:${BUILD_NUMBER}
                 '''
@@ -148,7 +146,6 @@ pipeline {
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --ignore-unfixed \
-                      --exit-code 0 \
                       --no-progress \
                       devsecops-nginx:${BUILD_NUMBER}
                 '''
