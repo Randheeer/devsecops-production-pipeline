@@ -304,7 +304,7 @@ pipeline {
         }
     }
 
-	stage('OWASP ZAP DAST') {
+        stage('OWASP ZAP DAST') {
     	    steps {
         	sh '''
             	    echo "======================================"
@@ -326,7 +326,7 @@ pipeline {
 
                     ls -lh zap-report.html
                 '''
-            }
+                }
 
             post {
                 always {
