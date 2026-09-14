@@ -8,8 +8,6 @@ pipeline {
         BACKEND_IMAGE  = 'randheeer/devsecops-backend'
         FRONTEND_IMAGE = 'randheeer/devsecops-frontend'
         NGINX_IMAGE    = 'randheeer/devsecops-nginx'
-
-        SONARQUBE_ENV = 'SonarQube'
     }
 
     stages {
@@ -123,7 +121,7 @@ pipeline {
 
 
         // =========================================================
-        // 6. BACKEND DOCKER BUILD
+        // 6. BUILD BACKEND
         // =========================================================
 
         stage('Build Backend Image') {
@@ -138,7 +136,7 @@ pipeline {
                       ./backend
 
                     echo ""
-                    echo "Backend image created:"
+                    echo "Backend image:"
                     docker images ${BACKEND_IMAGE}
                 '''
             }
@@ -146,7 +144,7 @@ pipeline {
 
 
         // =========================================================
-        // 7. BACKEND TRIVY
+        // 7. TRIVY BACKEND
         // =========================================================
 
         stage('Trivy Backend Scan') {
@@ -167,7 +165,7 @@ pipeline {
 
 
         // =========================================================
-        // 8. FRONTEND DOCKER BUILD
+        // 8. BUILD FRONTEND
         // =========================================================
 
         stage('Build Frontend Image') {
@@ -182,7 +180,7 @@ pipeline {
                       ./frontend
 
                     echo ""
-                    echo "Frontend image created:"
+                    echo "Frontend image:"
                     docker images ${FRONTEND_IMAGE}
                 '''
             }
@@ -190,7 +188,7 @@ pipeline {
 
 
         // =========================================================
-        // 9. FRONTEND TRIVY
+        // 9. TRIVY FRONTEND
         // =========================================================
 
         stage('Trivy Frontend Scan') {
@@ -211,7 +209,7 @@ pipeline {
 
 
         // =========================================================
-        // 10. NGINX DOCKER BUILD
+        // 10. BUILD NGINX
         // =========================================================
 
         stage('Build Nginx Image') {
@@ -226,7 +224,7 @@ pipeline {
                       ./nginx
 
                     echo ""
-                    echo "Nginx image created:"
+                    echo "Nginx image:"
                     docker images ${NGINX_IMAGE}
                 '''
             }
@@ -234,7 +232,7 @@ pipeline {
 
 
         // =========================================================
-        // 11. NGINX TRIVY
+        // 11. TRIVY NGINX
         // =========================================================
 
         stage('Trivy Nginx Scan') {
@@ -255,7 +253,7 @@ pipeline {
 
 
         // =========================================================
-        // 12. DOCKER HUB LOGIN + PUSH
+        // 12. PUSH TO DOCKER HUB
         // =========================================================
 
         stage('Push Images to Docker Hub') {
@@ -271,7 +269,7 @@ pipeline {
 
                     sh '''
                         echo "======================================"
-                        echo "Logging into Docker Hub"
+                        echo "Docker Hub Login"
                         echo "======================================"
 
                         echo "$DOCKER_PASSWORD" | docker login \
@@ -279,19 +277,25 @@ pipeline {
                           --password-stdin
 
                         echo ""
-                        echo "Pushing Backend..."
-                        docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}
+                        echo "Pushing Backend Image..."
+
+                        docker push \
+                          ${BACKEND_IMAGE}:${BUILD_NUMBER}
 
                         echo ""
-                        echo "Pushing Frontend..."
-                        docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}
+                        echo "Pushing Frontend Image..."
+
+                        docker push \
+                          ${FRONTEND_IMAGE}:${BUILD_NUMBER}
 
                         echo ""
-                        echo "Pushing Nginx..."
-                        docker push ${NGINX_IMAGE}:${BUILD_NUMBER}
+                        echo "Pushing Nginx Image..."
+
+                        docker push \
+                          ${NGINX_IMAGE}:${BUILD_NUMBER}
 
                         echo ""
-                        echo "Docker images pushed successfully."
+                        echo "All images pushed successfully."
 
                         docker logout
                     '''
@@ -331,6 +335,7 @@ pipeline {
                             sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=${BUILD_NUMBER}/' .env
 
                             echo 'Current IMAGE_TAG:'
+
                             grep '^IMAGE_TAG=' .env
 
                             echo 'Pulling Docker images...'
@@ -380,17 +385,21 @@ pipeline {
                             docker compose ps
 
                             echo ''
+
                             echo 'Testing application on port 8081...'
 
                             curl -f http://localhost:8081
 
                             echo ''
+
                             echo 'Health check PASSED'
                         "
                     '''
                 }
             }
         }
+
+    }
 
 
     // =============================================================
