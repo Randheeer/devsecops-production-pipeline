@@ -36,7 +36,7 @@ pipeline {
 
 	stage('SonarQube Quality Gate') {
             steps {
-                timeout(time: 5, unit: 'MINUTES') {
+                timeout(time: 15, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -51,6 +51,20 @@ pipeline {
               	      -t devsecops-backend:${BUILD_NUMBER} \
               	      ./backend
         	'''
+            }
+	}
+	
+	stage('Trivy Image Scan') {
+    	    steps {
+        	sh '''
+            	    echo "Scanning Docker image with Trivy..."
+
+                    trivy image \
+              	      --severity HIGH,CRITICAL \
+                      --exit-code 1 \
+                      --no-progress \
+                      devsecops-backend:${1e94e12e896e}
+                '''
             }
 	}	
 
