@@ -115,6 +115,7 @@ pipeline {
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --ignore-unfixed \
+                      --exit-code 1 \
                       --no-progress \
                       devsecops-frontend:${BUILD_NUMBER}
                 '''
@@ -218,48 +219,136 @@ pipeline {
                 }
             }
         }
-    }
+
+        /*
+         * ============================
+         * DEPLOYMENT
+         * ============================
+         */
 
         stage('Deploy to Web App EC2') {
-    	    steps {
-                sshagent(credentials: ['app-server-ssh']) {
-                    sh '''
-                    	echo "Deploying to web-app EC2..."
+            steps {
 
-                    	ssh -o StrictHostKeyChecking=no ubuntu@43.205.7.245 '
+                sshagent(credentials: ['app-server-ssh']) {
+
+                    sh '''
+                        echo "======================================"
+                        echo "Deploying to web-app EC2..."
+                        echo "Build Number: ${BUILD_NUMBER}"
+                        echo "======================================"
+
+                        ssh -o StrictHostKeyChecking=no ubuntu@43.205.7.245 "
+                            set -e
+
+                            echo 'Connected to web-app EC2'
+
                             cd /opt/devsecops-app
 
-                            echo "Updating image tag..."
-                            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${BUILD_NUMBER}/" .env
+                            echo 'Updating image tag...'
 
-                            echo "Pulling Docker images..."
+                            sed -i 's/^IMAGE_TAG=.*/IMAGE_TAG=${BUILD_NUMBER}/' .env
+
+                            echo 'Current IMAGE_TAG:'
+                            grep '^IMAGE_TAG=' .env
+
+                            echo 'Pulling Docker images...'
+
                             docker compose pull
 
-                            echo "Starting application..."
+                            echo 'Starting application...'
+
                             docker compose up -d
 
-                            echo "Checking containers..."
+                            echo 'Checking containers...'
+
                             docker compose ps
-                   	"  
+
+                            echo 'Deployment completed successfully'
+                        "
                     '''
-               }
-    	}
-}
+                }
+            }
+        }
+
+        /*
+         * ============================
+         * DEPLOYMENT HEALTH CHECK
+         * ============================
+         */
+
+        stage('Deployment Health Check') {
+            steps {
+
+                sshagent(credentials: ['app-server-ssh']) {
+
+                    sh '''
+                        echo "======================================"
+                        echo "Running deployment health check..."
+                        echo "======================================"
+
+                        ssh -o StrictHostKeyChecking=no ubuntu@43.205.7.245 "
+                            set -e
+
+                            cd /opt/devsecops-app
+
+                            echo 'Container status:'
+
+                            docker compose ps
+
+                            echo 'Testing application on port 8081...'
+
+                            curl -f http://localhost:8081
+
+                            echo 'Health check PASSED'
+                        "
+                    '''
+                }
+            }
+        }
+    }
+
+    /*
+     * ============================
+     * POST ACTIONS
+     * ============================
+     */
+
     post {
 
         success {
-            echo '======================================'
-            echo 'DevSecOps Pipeline Completed Successfully'
-            echo 'All security gates passed'
-            echo 'Docker images pushed to Docker Hub'
-            echo '======================================'
+            echo '''
+======================================
+DEVSECOPS PIPELINE SUCCESS
+======================================
+
+Semgrep              PASSED
+SonarQube            PASSED
+Quality Gate         PASSED
+Backend Build        PASSED
+Backend Trivy        PASSED
+Frontend Build       PASSED
+Frontend Trivy       PASSED
+Nginx Build          PASSED
+Nginx Trivy          PASSED
+Docker Hub            PASSED
+EC2 Deployment       PASSED
+Health Check          PASSED
+
+Application deployed successfully.
+======================================
+'''
         }
 
         failure {
-            echo '======================================'
-            echo 'DevSecOps Pipeline FAILED'
-            echo 'Check the failed stage above'
-            echo '======================================'
+            echo '''
+======================================
+DEVSECOPS PIPELINE FAILED
+======================================
+
+Check the failed stage above.
+
+======================================
+'''
         }
 
         always {
