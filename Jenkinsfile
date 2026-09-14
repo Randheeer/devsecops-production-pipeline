@@ -234,7 +234,7 @@ pipeline {
                         echo "Build Number: ${BUILD_NUMBER}"
                         echo "======================================"
 
-                        ssh -o StrictHostKeyChecking=no ubuntu@43.205.7.245 "
+                        ssh -o StrictHostKeyChecking=no ubuntu@65.0.153.17 "
                             set -e
 
                             echo 'Connected to web-app EC2'
@@ -283,7 +283,7 @@ pipeline {
                         echo "Running deployment health check..."
                         echo "======================================"
 
-                        ssh -o StrictHostKeyChecking=no ubuntu@43.205.7.245 "
+                        ssh -o StrictHostKeyChecking=no ubuntu@65.0.153.17 "
                             set -e
 
                             cd /opt/devsecops-app
