@@ -220,6 +220,31 @@ pipeline {
         }
     }
 
+	stage('Deploy to Web App EC2') {
+    steps {
+        sshagent(credentials: ['app-server-ssh']) {
+            sh '''
+                echo "Deploying to web-app EC2..."
+
+                ssh -o StrictHostKeyChecking=no ubuntu@43.205.7.245 '
+                    cd /opt/devsecops-app
+
+                    echo "Updating image tag..."
+                    sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${BUILD_NUMBER}/" .env
+
+                    echo "Pulling Docker images..."
+                    docker compose pull
+
+                    echo "Starting application..."
+                    docker compose up -d
+
+                    echo "Checking containers..."
+                    docker compose ps
+                '
+            '''
+        }
+    }
+}
     post {
 
         success {
