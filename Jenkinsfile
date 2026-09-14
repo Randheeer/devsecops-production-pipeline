@@ -63,7 +63,7 @@ pipeline {
               	      --severity HIGH,CRITICAL \
                       --exit-code 1 \
                       --no-progress \
-                      devsecops-backend:${1e94e12e896e}
+                      devsecops-backend:${BUILD_NUMBER}
                 '''
             }
 	}	
