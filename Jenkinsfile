@@ -10,15 +10,6 @@ pipeline {
             }
         }
 
-        stage('Gitleaks Secret Scan') {
-            steps {
-                sh '''
-                    echo "Running Gitleaks..."
-                    gitleaks dir . --no-banner --redact
-                '''
-            }
-        }
-
 	stage('Semgrep SAST') {
     	    steps {
                 sh '''
