@@ -2,32 +2,85 @@ pipeline {
 
     agent any
 
+    environment {
+        DOCKERHUB_USER = 'randheeer'
+
+        BACKEND_IMAGE  = 'randheeer/devsecops-backend'
+        FRONTEND_IMAGE = 'randheeer/devsecops-frontend'
+        NGINX_IMAGE    = 'randheeer/devsecops-nginx'
+
+        SONARQUBE_ENV = 'SonarQube'
+    }
+
     stages {
+
+        // =========================================================
+        // 1. CHECKOUT
+        // =========================================================
 
         stage('Checkout') {
             steps {
-                echo 'Source code checked out by Jenkins'
+                echo '======================================'
+                echo 'Checking out source code...'
+                echo '======================================'
+
+                checkout scm
             }
         }
+
+
+        // =========================================================
+        // 2. ENVIRONMENT CHECK
+        // =========================================================
 
         stage('Environment Check') {
             steps {
                 sh '''
-                    echo "Checking build environment..."
+                    echo "======================================"
+                    echo "Environment Check"
+                    echo "======================================"
 
-                    git --version
+                    echo "Java:"
+                    java -version
+
+                    echo ""
+                    echo "Docker:"
                     docker --version
-                    trivy --version
-                    sonar-scanner --version
+
+                    echo ""
+                    echo "Docker Compose:"
+                    docker compose version
+
+                    echo ""
+                    echo "Semgrep:"
                     semgrep --version
+
+                    echo ""
+                    echo "SonarScanner:"
+                    sonar-scanner --version
+
+                    echo ""
+                    echo "Trivy:"
+                    trivy --version
+
+                    echo ""
+                    echo "Jenkins workspace:"
+                    pwd
                 '''
             }
         }
 
+
+        // =========================================================
+        // 3. SEMGREP SAST
+        // =========================================================
+
         stage('Semgrep SAST') {
             steps {
                 sh '''
+                    echo "======================================"
                     echo "Running Semgrep SAST..."
+                    echo "======================================"
 
                     semgrep scan \
                       --config auto \
@@ -36,17 +89,29 @@ pipeline {
             }
         }
 
+
+        // =========================================================
+        // 4. SONARQUBE ANALYSIS
+        // =========================================================
+
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
-                        echo "Running SonarQube analysis..."
+                        echo "======================================"
+                        echo "Running SonarQube Analysis..."
+                        echo "======================================"
 
                         sonar-scanner
                     '''
                 }
             }
         }
+
+
+        // =========================================================
+        // 5. SONARQUBE QUALITY GATE
+        // =========================================================
 
         stage('SonarQube Quality Gate') {
             steps {
@@ -56,109 +121,144 @@ pipeline {
             }
         }
 
-        /*
-         * ============================
-         * BACKEND
-         * ============================
-         */
 
-        stage('Docker Build Backend') {
+        // =========================================================
+        // 6. BACKEND DOCKER BUILD
+        // =========================================================
+
+        stage('Build Backend Image') {
             steps {
                 sh '''
-                    echo "Building backend Docker image..."
+                    echo "======================================"
+                    echo "Building Backend Docker Image"
+                    echo "======================================"
 
                     docker build \
-                      -t devsecops-backend:${BUILD_NUMBER} \
+                      -t ${BACKEND_IMAGE}:${BUILD_NUMBER} \
                       ./backend
+
+                    echo ""
+                    echo "Backend image created:"
+                    docker images ${BACKEND_IMAGE}
                 '''
             }
         }
+
+
+        // =========================================================
+        // 7. BACKEND TRIVY
+        // =========================================================
 
         stage('Trivy Backend Scan') {
             steps {
                 sh '''
-                    echo "Scanning backend image with Trivy..."
+                    echo "======================================"
+                    echo "Scanning Backend Image with Trivy"
+                    echo "======================================"
 
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --ignore-unfixed \
                       --no-progress \
-                      devsecops-backend:${BUILD_NUMBER}
+                      ${BACKEND_IMAGE}:${BUILD_NUMBER}
                 '''
             }
         }
 
-        /*
-         * ============================
-         * FRONTEND
-         * ============================
-         */
 
-        stage('Docker Build Frontend') {
+        // =========================================================
+        // 8. FRONTEND DOCKER BUILD
+        // =========================================================
+
+        stage('Build Frontend Image') {
             steps {
                 sh '''
-                    echo "Building frontend Docker image..."
+                    echo "======================================"
+                    echo "Building Frontend Docker Image"
+                    echo "======================================"
 
                     docker build \
-                      -t devsecops-frontend:${BUILD_NUMBER} \
+                      -t ${FRONTEND_IMAGE}:${BUILD_NUMBER} \
                       ./frontend
+
+                    echo ""
+                    echo "Frontend image created:"
+                    docker images ${FRONTEND_IMAGE}
                 '''
             }
         }
+
+
+        // =========================================================
+        // 9. FRONTEND TRIVY
+        // =========================================================
 
         stage('Trivy Frontend Scan') {
             steps {
                 sh '''
-                    echo "Scanning frontend image with Trivy..."
+                    echo "======================================"
+                    echo "Scanning Frontend Image with Trivy"
+                    echo "======================================"
 
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --ignore-unfixed \
                       --no-progress \
-                      devsecops-frontend:${BUILD_NUMBER}
+                      ${FRONTEND_IMAGE}:${BUILD_NUMBER}
                 '''
             }
         }
 
-        /*
-         * ============================
-         * NGINX
-         * ============================
-         */
 
-        stage('Docker Build Nginx') {
+        // =========================================================
+        // 10. NGINX DOCKER BUILD
+        // =========================================================
+
+        stage('Build Nginx Image') {
             steps {
                 sh '''
-                    echo "Building Nginx Docker image..."
+                    echo "======================================"
+                    echo "Building Nginx Docker Image"
+                    echo "======================================"
 
                     docker build \
-                      -t devsecops-nginx:${BUILD_NUMBER} \
+                      -t ${NGINX_IMAGE}:${BUILD_NUMBER} \
                       ./nginx
+
+                    echo ""
+                    echo "Nginx image created:"
+                    docker images ${NGINX_IMAGE}
                 '''
             }
         }
+
+
+        // =========================================================
+        // 11. NGINX TRIVY
+        // =========================================================
 
         stage('Trivy Nginx Scan') {
             steps {
                 sh '''
-                    echo "Scanning Nginx image with Trivy..."
+                    echo "======================================"
+                    echo "Scanning Nginx Image with Trivy"
+                    echo "======================================"
 
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --ignore-unfixed \
                       --no-progress \
-                      devsecops-nginx:${BUILD_NUMBER}
+                      ${NGINX_IMAGE}:${BUILD_NUMBER}
                 '''
             }
         }
 
-        /*
-         * ============================
-         * DOCKER HUB
-         * ============================
-         */
 
-        stage('Docker Push') {
+        // =========================================================
+        // 12. DOCKER HUB LOGIN + PUSH
+        // =========================================================
+
+        stage('Push Images to Docker Hub') {
             steps {
 
                 withCredentials([
@@ -170,46 +270,28 @@ pipeline {
                 ]) {
 
                     sh '''
-                        echo "Logging into Docker Hub..."
+                        echo "======================================"
+                        echo "Logging into Docker Hub"
+                        echo "======================================"
 
                         echo "$DOCKER_PASSWORD" | docker login \
                           -u "$DOCKER_USERNAME" \
                           --password-stdin
 
-                        echo "Tagging backend image..."
+                        echo ""
+                        echo "Pushing Backend..."
+                        docker push ${BACKEND_IMAGE}:${BUILD_NUMBER}
 
-                        docker tag \
-                          devsecops-backend:${BUILD_NUMBER} \
-                          $DOCKER_USERNAME/devsecops-backend:${BUILD_NUMBER}
+                        echo ""
+                        echo "Pushing Frontend..."
+                        docker push ${FRONTEND_IMAGE}:${BUILD_NUMBER}
 
-                        echo "Tagging frontend image..."
+                        echo ""
+                        echo "Pushing Nginx..."
+                        docker push ${NGINX_IMAGE}:${BUILD_NUMBER}
 
-                        docker tag \
-                          devsecops-frontend:${BUILD_NUMBER} \
-                          $DOCKER_USERNAME/devsecops-frontend:${BUILD_NUMBER}
-
-                        echo "Tagging Nginx image..."
-
-                        docker tag \
-                          devsecops-nginx:${BUILD_NUMBER} \
-                          $DOCKER_USERNAME/devsecops-nginx:${BUILD_NUMBER}
-
-                        echo "Pushing backend image..."
-
-                        docker push \
-                          $DOCKER_USERNAME/devsecops-backend:${BUILD_NUMBER}
-
-                        echo "Pushing frontend image..."
-
-                        docker push \
-                          $DOCKER_USERNAME/devsecops-frontend:${BUILD_NUMBER}
-
-                        echo "Pushing Nginx image..."
-
-                        docker push \
-                          $DOCKER_USERNAME/devsecops-nginx:${BUILD_NUMBER}
-
-                        echo "Logging out from Docker Hub..."
+                        echo ""
+                        echo "Docker images pushed successfully."
 
                         docker logout
                     '''
@@ -217,11 +299,10 @@ pipeline {
             }
         }
 
-        /*
-         * ============================
-         * DEPLOYMENT
-         * ============================
-         */
+
+        // =========================================================
+        // 13. DEPLOY TO AWS EC2
+        // =========================================================
 
         stage('Deploy to Web App EC2') {
             steps {
@@ -231,10 +312,14 @@ pipeline {
                     sh '''
                         echo "======================================"
                         echo "Deploying to web-app EC2..."
-                        echo "Build Number: ${BUILD_NUMBER}"
                         echo "======================================"
 
-                        ssh -o StrictHostKeyChecking=no ubuntu@65.0.153.17 "
+                        echo "Build Number: ${BUILD_NUMBER}"
+
+                        ssh \
+                          -o StrictHostKeyChecking=no \
+                          -o BatchMode=yes \
+                          ubuntu@65.0.153.17 "
                             set -e
 
                             echo 'Connected to web-app EC2'
@@ -267,11 +352,10 @@ pipeline {
             }
         }
 
-        /*
-         * ============================
-         * DEPLOYMENT HEALTH CHECK
-         * ============================
-         */
+
+        // =========================================================
+        // 14. DEPLOYMENT HEALTH CHECK
+        // =========================================================
 
         stage('Deployment Health Check') {
             steps {
@@ -283,7 +367,10 @@ pipeline {
                         echo "Running deployment health check..."
                         echo "======================================"
 
-                        ssh -o StrictHostKeyChecking=no ubuntu@65.0.153.17 "
+                        ssh \
+                          -o StrictHostKeyChecking=no \
+                          -o BatchMode=yes \
+                          ubuntu@65.0.153.17 "
                             set -e
 
                             cd /opt/devsecops-app
@@ -292,96 +379,88 @@ pipeline {
 
                             docker compose ps
 
+                            echo ''
                             echo 'Testing application on port 8081...'
 
                             curl -f http://localhost:8081
 
+                            echo ''
                             echo 'Health check PASSED'
                         "
                     '''
                 }
             }
         }
+
+
+        // =========================================================
+        // 15. OWASP ZAP DAST
+        // =========================================================
+
+        stage('OWASP ZAP DAST') {
+            steps {
+
+                sh '''
+                    echo "======================================"
+                    echo "Running OWASP ZAP DAST..."
+                    echo "======================================"
+
+                    rm -f zap-report.html
+
+                    docker run --rm \
+                      -t \
+                      -v "$WORKSPACE:/zap/wrk/:rw" \
+                      zaproxy/zap-stable \
+                      zap-baseline.py \
+                      -t http://65.0.153.17:8081/ \
+                      -r zap-report.html \
+                      -I
+
+                    echo ""
+                    echo "======================================"
+                    echo "ZAP Scan Completed"
+                    echo "======================================"
+
+                    ls -lh zap-report.html
+                '''
+            }
+
+            post {
+                always {
+                    archiveArtifacts artifacts: 'zap-report.html',
+                                     allowEmptyArchive: true
+                }
+            }
+        }
+
     }
 
-         stage('OWASP ZAP DAST') {
-    	     steps {
-        	 sh '''
-            	     echo "======================================"
-            	     echo "Running OWASP ZAP DAST..."
-            	     echo "======================================"
-			
-            	     rm -f zap-report.html
 
-           	     docker run --rm \
-              	       -t \
-                       -v "$WORKSPACE:/zap/wrk/:rw" \
-                       zaproxy/zap-stable \
-                       zap-baseline.py \
-                       -t http://65.0.153.17:8081/ \
-                       -r zap-report.html \
-                       -I
-
-                     echo "ZAP scan completed"
-
-                     ls -lh zap-report.html
-                 '''
-                 }
-
-             post {
-                 always {
-                     archiveArtifacts artifacts: 'zap-report.html',
-              	                          allowEmptyArchive: true
-               }
-           }  
-       }
-
-    /*
-     * ============================
-     * POST ACTIONS
-     * ============================
-     */
+    // =============================================================
+    // PIPELINE POST ACTIONS
+    // =============================================================
 
     post {
 
         success {
-            echo '''
-======================================
-DEVSECOPS PIPELINE SUCCESS
-======================================
-
-Semgrep              PASSED
-SonarQube            PASSED
-Quality Gate         PASSED
-Backend Build        PASSED
-Backend Trivy        PASSED
-Frontend Build       PASSED
-Frontend Trivy       PASSED
-Nginx Build          PASSED
-Nginx Trivy          PASSED
-Docker Hub            PASSED
-EC2 Deployment       PASSED
-Health Check          PASSED
-
-Application deployed successfully.
-======================================
-'''
+            echo "======================================"
+            echo "CI/CD PIPELINE SUCCESSFUL"
+            echo "Build Number: ${BUILD_NUMBER}"
+            echo "======================================"
         }
 
         failure {
-            echo '''
-======================================
-DEVSECOPS PIPELINE FAILED
-======================================
-
-Check the failed stage above.
-
-======================================
-'''
+            echo "======================================"
+            echo "CI/CD PIPELINE FAILED"
+            echo "Build Number: ${BUILD_NUMBER}"
+            echo "======================================"
         }
 
         always {
-            echo "Build Number: ${BUILD_NUMBER}"
+            echo "======================================"
+            echo "Pipeline finished with status:"
+            echo "${currentBuild.currentResult}"
+            echo "======================================"
         }
     }
 }
