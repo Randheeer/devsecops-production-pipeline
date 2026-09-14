@@ -393,49 +393,6 @@ pipeline {
         }
 
 
-        // =========================================================
-        // 15. OWASP ZAP DAST
-        // =========================================================
-
-        stage('OWASP ZAP DAST') {
-            steps {
-
-                sh '''
-                    echo "======================================"
-                    echo "Running OWASP ZAP DAST..."
-                    echo "======================================"
-
-                    rm -f zap-report.html
-
-                    docker run --rm \
-                      -t \
-                      -v "$WORKSPACE:/zap/wrk/:rw" \
-                      zaproxy/zap-stable \
-                      zap-baseline.py \
-                      -t http://65.0.153.17:8081/ \
-                      -r zap-report.html \
-                      -I
-
-                    echo ""
-                    echo "======================================"
-                    echo "ZAP Scan Completed"
-                    echo "======================================"
-
-                    ls -lh zap-report.html
-                '''
-            }
-
-            post {
-                always {
-                    archiveArtifacts artifacts: 'zap-report.html',
-                                     allowEmptyArchive: true
-                }
-            }
-        }
-
-    }
-
-
     // =============================================================
     // PIPELINE POST ACTIONS
     // =============================================================
