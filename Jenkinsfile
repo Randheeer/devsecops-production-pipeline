@@ -232,7 +232,7 @@ pipeline {
                 sh '''
                     echo "Deploying to web-app EC2..."
 
-                    ssh -o StrictHostKeyChecking=no ubuntu@43.205.7.245 '
+                    }ssh -o StrictHostKeyChecking=no ubuntu@43.205.7.245 '
                         cd /opt/devsecops-app
 
                         echo "Updating image tag..."
