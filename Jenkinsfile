@@ -388,7 +388,11 @@ pipeline {
 
                             echo 'Testing application on port 8081...'
 
-                            curl -f http://localhost:8081
+                            curl -f http://localhost:8081/
+
+			    echo 'Checking backend API health...'
+
+			    curl -f http://localhost:8081/api/health
 
                             echo ''
 
